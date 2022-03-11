@@ -1,43 +1,59 @@
-#!/usr/bin/env node
+import { Miniflare, Log, LogLevel } from 'miniflare'
+import merge from 'lodash.merge'
 
-import { Miniflare } from 'miniflare'
-import Commander from 'commander'
-import { readFileSync } from 'fs'
+const defaultOptions = {
+  kvData: {},
+  mfOptions: {
+    debug: true,
+    watch: true,
+    wranglerConfigPath: true,
+    logUnhandledRejections: true,
+    log: new Log(LogLevel.DEBUG),
+    sourceMap: true,
+  }
+}
 
-async function loadKV (mf, kvData) {
+export const createMiniflareServer = async (options = defaultOptions) => {
+  const {
+    kvData,
+    mfOptions
+  } = merge(defaultOptions, options)
+
+  const mf = new Miniflare(mfOptions)
+
   for (const nsName in kvData) {
-    const nsValues = Object.entries(kvData[nsName])
-    const ns = await mf.getKVNamespace(nsName)
-    await Promise.all(nsValues.map(([k, v]) => {
-      ns.put(k, v)
-    }))
+    console.log(nsName)
+    const nsEntries = Object.entries(kvData[nsName])
+    console.log(nsEntries)
+    const kvNamespace = await mf.getKVNamespace(nsName)
+    await Promise.all(nsEntries.map(entry => kvNamespace.put(...entry)))
   }
+
+  return mf
 }
 
-async function runMiniflare (options, cmd) {
-  const { kvDataFile } = options
-  const mf = new Miniflare({})
-  if (kvDataFile !== undefined) {
-    try {
-      const kvData = JSON.parse(readFileSync(kvDataFile))
-      await loadKV(mf, kvData)
-    } catch(e) {
-      console.log(e.message)
-      process.exit(1)
-    }
-  }
-  mf.createServer().listen(5000, () => {
-    console.log("Listening on :5000");
-  })
-}
+// const mf = new Miniflare({
+//   scriptPath: 'worker/script.js',
+//   buildWatchPaths: ['index.js', 'osoClasses.js'],
+//   wranglerConfigPath: true,
+//   debug: true,
+//   watch: true,
+//   wasmBindings: {
+//     WASM_MODULE: 'worker/module.wasm',
+//   },
+// })
+//
+// const newcoBasicAuthNS = await mf.getKVNamespace('NEWCO_BASIC_AUTH')
+// const fasdentifyAuthCredentialsNS = await mf.getKVNamespace('FASDENTIFY_AUTH_CREDENTIALS')
+//
+// await Promise.all([
+//   newcoBasicAuthNS.put('USER', 'skipper'),
+//   newcoBasicAuthNS.put('PASS', 'otto'),
+//   fasdentifyAuthCredentialsNS.put('CLIENT_ID', '2e4edd1d-9fad-4977-98b3-1f9287e41f67'),
+//   fasdentifyAuthCredentialsNS.put('CLIENT_SECRET', 'e510883c793db4f0c7efa1906cacaed5179aa67a'),
+//   fasdentifyAuthCredentialsNS.put('TOKEN_URL', 'http://local.fasdentify.com:3000/oauth/token'),
+//   fasdentifyAuthCredentialsNS.put('AUTHORIZE_URL', 'http://local.fasdentify.com:3000/oauth/authorize'),
+//   fasdentifyAuthCredentialsNS.put('LOGIN_URL', 'http://local.fasdentify.com:3001/login'),
+// ])
 
-const program = new Commander.Command('miniflareRunner')
 
-program
-  .option(
-    '-k, --kv-data-file <filepath>',
-    'JSON file containing data to be inserted into kv namespaces'
-  )
-  .action(runMiniflare)
-  .allowUnknownOption()
-  .parseAsync(process.argv)

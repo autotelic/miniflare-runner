@@ -2,16 +2,16 @@
   "name": "@autotelic/miniflare-runner",
   "version": "0.1.0",
   "description": "",
-  "bin": "index.js",
+  "main": "index.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
-    "commander": "^8.3.0",
-    "miniflare": "^1.4.1"
+    "lodash.merge": "^4.6.2",
+    "miniflare": "^2.3.0"
   }
 }
