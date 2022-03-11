@@ -22,9 +22,7 @@ export const createMiniflareServer = async (options = defaultOptions) => {
   const mf = new Miniflare(mfOptions)
 
   for (const nsName in kvData) {
-    console.log(nsName)
     const nsEntries = Object.entries(kvData[nsName])
-    console.log(nsEntries)
     const kvNamespace = await mf.getKVNamespace(nsName)
     await Promise.all(nsEntries.map(entry => kvNamespace.put(...entry)))
   }
